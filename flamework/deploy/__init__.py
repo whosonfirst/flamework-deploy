@@ -15,6 +15,9 @@ class base:
         self.identity = cfg.get('flamework-deploy', 'identity')
         self.config = cfg.get('flamework-deploy', 'config')                
         self.secrets = cfg.get('flamework-deploy', 'secrets')
+
+        # put this in the config? probably...
+        self.scheme = kwargs.get('scheme', 'https')
         
         self.setup()
 
@@ -123,11 +126,10 @@ class base:
     def deploy_config_for_host(self, host):
 
         logging.info("deploy config for %s" % host)
-
         
     def url_for_host(self, host):
 
-        return "https://%s" % host
+        return "%s://%s" % (self. scheme, host)
     
     def _ssh(self, host, cmd):
 
