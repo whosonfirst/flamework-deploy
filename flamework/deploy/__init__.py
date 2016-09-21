@@ -7,22 +7,24 @@ import subprocess
 
 class base:
 
-    def __init__(self, **kwargs):
+    def __init__(self, cfg, **kwargs):
 
-        self.root = None
-        self.app = None
-        self.identity = None
+        self.local = cfg.get('flamework-deploy', 'local')
+        self.remote = cfg.get('flamework-deploy', 'remote')        
+        self.hosts = cfg.get('flamework-deploy', 'hosts')
+        self.identity = cfg.get('flamework-deploy', 'identity')
+        self.config = cfg.get('flamework-deploy', 'config')                
+        self.secrets = cfg.get('flamework-deploy', 'secrets')
         
-        self.setup(**kwargs)
+        self.setup()
 
-    def setup(self, **kwargs):
+    def setup(self):
 
-        raise Exception, "Invalid setup"
-
+        # please validate everything here
+        
     def hosts(self):
 
-        hosts = os.path.join(self.root, "hosts")
-        hosts_txt = os.path.join(hosts, "hosts.txt")
+        hosts_txt = os.path.abspath(self.hosts)
 
         fh = open(hosts_txt, "r")
 
@@ -39,7 +41,7 @@ class base:
 
         logging.info("disable host %s" % host)
         
-        bin = os.path.join(self.app, "bin")
+        bin = os.path.join(self.remote, "bin")
         disable = os.path.join(bin, "disable-site.php")
         
         cmd = [
@@ -54,7 +56,7 @@ class base:
 
         logging.info("enable host %s" % host)
                 
-        bin = os.path.join(self.app, "bin")
+        bin = os.path.join(self.remote, "bin")
         enable = os.path.join(bin, "enable-site.php")
         
         cmd = [
