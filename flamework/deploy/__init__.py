@@ -5,7 +5,7 @@ import os
 import sys
 import logging
 import time
-
+import shutil
 import subprocess
 
 class base:
@@ -13,22 +13,43 @@ class base:
     def __init__(self, name, cfg, **kwargs):
 
         self.name = name
-        self.local = cfg.get(name, 'local')
+        self.source = cfg.get(name, 'source')
+        self.staging = cfg.get(name, 'staging') 
         self.remote = cfg.get(name, 'remote')        
         self.hosts = cfg.get(name, 'hosts')
         self.identity = cfg.get(name, 'identity')
         self.config = cfg.get(name, 'config')                
-        self.secrets = cfg.get(name, 'secrets')
 
-        # put this in the config? probably...
-        self.scheme = kwargs.get('scheme', 'https')
+        self.staging = os.path.abspath(self.staging)
+        self.config = os.path.abspath(self.config)
+
+        self.hosts = os.path.abspath(self.hosts)
+        self.identity = os.path.abspath(self.identity)
+
+        for path in (self.staging, self.config):
+
+            if not os.path.exists(path):
+                raise Exception, "%s does not exist" % path
+
+            if not os.path.isdir(path):
+                raise Exception, "%s is not a directory" % path
+
+        for path in (self.hosts, self.identity):
+
+            if not os.path.exists(path):
+                raise Exception, "%s does not exist" % path
         
-        self.setup()
+        for cfg in ('config_local.php', 'secrets.php'):
 
-    def setup(self):
+            cfg_path = os.path.join(self.config, cfg)
 
-        # please validate everything here
-        pass
+            if not os.path.exists(cfg_path):
+                raise Exception, "%s is missing" % cfg_path
+
+        for target in (self.remote, self.source):
+
+            if target == "":
+                raise Exception, "%s is empty" % "FIXME"
 
     def hosts(self):
 
@@ -44,6 +65,44 @@ class base:
                 continue
 
             yield ln
+
+    def stage_site(self):
+
+        dotgit = os.path.join(self.staging, ".git")
+
+        www = os.path.join(self.staging, "www")
+        include = os.path.join(www, "include")
+
+        config_local = os.path.join(include, "config_local/.php")
+        htaccess = os.path.join(www, ".htaccess")
+
+        logging.info("purge contents of %s" % self.staging)
+
+        for root, dirs, files in os.walk(self.staging):
+            for f in files:
+                os.unlink(os.path.join(root, f))
+            for d in dirs:
+                shutil.rmtree(os.path.join(root, d))
+
+        logging.info("clone %s in to %s" % (self.source, self.staging))
+
+        logging.info("remove %s" % dotgit)
+        # shutil.rmtree(dotgit)
+
+        for config in ('config_local.php', 'config_staging.php', 'secrets.php'):
+
+            local_path = os.path.join(self.config, config)
+            staging_path = os.path.join(include, config)
+
+            if os.path.exists(local_path):
+
+                logging.info("copy %s to %s" % (local_path, staging_path))
+                # shutil.copyfile(local_path, staging_path)
+        
+        logging.info("ensure errors are disabled in %s" % htaccess)
+
+        logging.info("set $GLOBALS['cfg']['environment'] in %s" % config_local)
+
 
     def disable_host(self, host):
 
