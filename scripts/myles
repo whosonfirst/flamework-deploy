@@ -1,0 +1,49 @@
+#!/usr/bin/env python
+# -*-python-*-
+
+import sys
+import os
+import logging
+
+import optparse
+import ConfigParser
+
+whoami = os.path.abspath(sys.argv[0])
+scripts = os.path.dirname(whoami)
+root = os.path.dirname(scripts)
+sys.path.append(root)
+
+import flamework.deploy
+
+if __name__ == '__main__':
+
+       opt_parser = optparse.OptionParser()
+
+       opt_parser.add_option('-n', '--name', dest='name', action='store', default=None, help='...')
+       opt_parser.add_option('-c', '--config', dest='config', action='store', default=None, help='Path to a valid deploy config file')
+       opt_parser.add_option('-v', '--verbose', dest='verbose', action='store_true', default=False, help='Be chatty (default is false)')
+       options, args = opt_parser.parse_args()
+       
+       if options.verbose:
+              logging.basicConfig(level=logging.DEBUG)
+       else:
+              logging.basicConfig(level=logging.INFO)
+              
+       if not options.name:
+              logging.error("Missing name")
+              sys.exit(1)
+
+       if not options.config:
+              logging.error("Missing config file")
+              sys.exit(1)
+
+       if not os.path.exists(options.config):
+              logging.error("Can't find config file")
+              sys.exit(1)
+
+       cfg = ConfigParser.ConfigParser()
+       cfg.read(options.config)
+
+       d = flamework.deploy.base(options.name, cfg)
+   
+       logging.info("myles is ready to dive")

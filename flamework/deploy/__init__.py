@@ -1,3 +1,6 @@
+# https://pythonhosted.org/setuptools/setuptools.html#namespace-packages
+__import__('pkg_resources').declare_namespace(__name__)
+
 import os
 import sys
 import logging
@@ -7,14 +10,15 @@ import subprocess
 
 class base:
 
-    def __init__(self, cfg, **kwargs):
+    def __init__(self, name, cfg, **kwargs):
 
-        self.local = cfg.get('flamework-deploy', 'local')
-        self.remote = cfg.get('flamework-deploy', 'remote')        
-        self.hosts = cfg.get('flamework-deploy', 'hosts')
-        self.identity = cfg.get('flamework-deploy', 'identity')
-        self.config = cfg.get('flamework-deploy', 'config')                
-        self.secrets = cfg.get('flamework-deploy', 'secrets')
+        self.name = name
+        self.local = cfg.get(name, 'local')
+        self.remote = cfg.get(name, 'remote')        
+        self.hosts = cfg.get(name, 'hosts')
+        self.identity = cfg.get(name, 'identity')
+        self.config = cfg.get(name, 'config')                
+        self.secrets = cfg.get(name, 'secrets')
 
         # put this in the config? probably...
         self.scheme = kwargs.get('scheme', 'https')
@@ -24,7 +28,8 @@ class base:
     def setup(self):
 
         # please validate everything here
-        
+        pass
+
     def hosts(self):
 
         hosts_txt = os.path.abspath(self.hosts)
