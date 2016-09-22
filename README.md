@@ -16,7 +16,7 @@ Too soon. Everything here will change.
 ### stage-site
 
 ```
-./myles -c ../../api/api.cfg -v -n api stage-site
+./myles -n api -c ../../api/api.cfg stage-site
 INFO:root:purge contents of /usr/local/mapzen/api/staging
 INFO:root:clone https://github.com/whosonfirst/whosonfirst-www-api.git in to /usr/local/mapzen/api/staging
 INFO:root:remove /usr/local/mapzen/api/staging/.git
