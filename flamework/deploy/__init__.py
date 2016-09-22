@@ -20,6 +20,10 @@ class base:
         self.identity = cfg.get(name, 'identity')
         self.config = cfg.get(name, 'config')                
 
+        self.dryrun = kwargs.get('dryrun', False)
+
+        #
+
         self.staging = os.path.abspath(self.staging)
         self.config = os.path.abspath(self.config)
 
@@ -78,16 +82,23 @@ class base:
 
         logging.info("purge contents of %s" % self.staging)
 
-        for root, dirs, files in os.walk(self.staging):
-            for f in files:
-                os.unlink(os.path.join(root, f))
-            for d in dirs:
-                shutil.rmtree(os.path.join(root, d))
+        if not self.dryrun:
 
+            for root, dirs, files in os.walk(self.staging):
+                for f in files:
+                    os.unlink(os.path.join(root, f))
+                for d in dirs:
+                    shutil.rmtree(os.path.join(root, d))
+                        
         logging.info("clone %s in to %s" % (self.source, self.staging))
 
+        if not self.dryrun:
+            pass	# PLEASE WRITE ME
+
         logging.info("remove %s" % dotgit)
-        # shutil.rmtree(dotgit)
+
+        if not self.dryrun:
+            shutil.rmtree(dotgit)
 
         for config in ('config_local.php', 'config_staging.php', 'secrets.php'):
 
@@ -97,12 +108,19 @@ class base:
             if os.path.exists(local_path):
 
                 logging.info("copy %s to %s" % (local_path, staging_path))
-                # shutil.copyfile(local_path, staging_path)
+
+                if not self.dryrun:
+                    shutil.copyfile(local_path, staging_path)
         
         logging.info("ensure errors are disabled in %s" % htaccess)
 
+        if not self.dryrun:
+            pass	# PLEASE WRITE ME
+
         logging.info("set $GLOBALS['cfg']['environment'] in %s" % config_local)
 
+        if not self.dryrun:
+            pass	# PLEASE WRITE ME
 
     def disable_host(self, host):
 
@@ -138,6 +156,11 @@ class base:
 
         url = self.url_for_host(host)
 
+        logging.info("check if %s is enabled (%s)" % (host, url))
+
+        if self.dryrun:
+            return True
+
         rsp = requests.get(url)
 
         if rsp.status_code == 200:
@@ -149,6 +172,11 @@ class base:
 
         url = self.url_for_host(host)
         rsp = requests.get(url)
+
+        logging.info("check if %s is disabled (%s)" % (host, url))
+
+        if self.dryrun:
+            return True
 
         # because this: https://github.com/whosonfirst/flamework/blob/master/www/include/init.php#L435-L460
         
@@ -205,9 +233,10 @@ class base:
 
         ssh_cmd.extend(cmd)
 
-        logging.debug(" ".join(ssh_cmd))
+        logging.info(" ".join(ssh_cmd))
         
-        out = subprocess.check_output(cmd)
+        if not self.dryrun:
+            out = subprocess.check_output(cmd)
 
     def _scp(self, host, cmd):
 
@@ -219,9 +248,10 @@ class base:
 
         scp_cmd.extend(cmd)
 
-        logging.debug(" ".join(scp_cmd))
+        logging.info(" ".join(scp_cmd))
                 
-        out = subprocess.check_output(cmd)
+        if not self.dryrun:
+            out = subprocess.check_output(cmd)
 
     def _rsync(self, host):
         pass
