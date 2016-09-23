@@ -58,7 +58,9 @@ if __name__ == '__main__':
 
        if command == "stage-site":
 
-              d.stage_site()
+              if not d.stage_site():
+                     logging.error("failed to stage site")
+                     sys.exit(1)
        
        elif command == "deploy-site":
 
@@ -69,7 +71,9 @@ if __name__ == '__main__':
 
        elif command == "deploy-config":
 
-              d.deploy_config()
+              if not d.deploy_config():
+                     logging.error("failed to deploy config")
+                     sys.exit(1)
 
        elif command == "enable-site":
 
@@ -141,3 +145,4 @@ if __name__ == '__main__':
               logging.error("Unknown command")
               sys.exit(1)
 
+       sys.exit(0)

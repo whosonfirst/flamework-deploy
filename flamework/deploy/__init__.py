@@ -284,15 +284,31 @@ class base:
             return False
 
         for host in self.hosts():
-            self.deploy_site_for_host(host)
+
+            if not self.deploy_site_for_host(host):
+                return False
+
+        # see the way the deploy lock isn't being removed if there's
+        # an error above? that's on purpose (20160923/thisisaaronland)
 
         return self.unlock_deploy()
 
     def deploy_config(self):
 
+        if not self.lock_deploy():
+            logging.error("failed to lock deploy")
+            return False
+
         for host in self.hosts():
-            self.deploy_config_for_host(host)
+
+            if not self.deploy_config_for_host(host):
+                return False
+
+        # see the way the deploy lock isn't being removed if there's
+        # an error above? that's on purpose (20160923/thisisaaronland)
             
+        return self.unlock_deploy()
+
     def deploy_site_for_host(self, host):
 
         logging.info("deploy site for %s" % host)
@@ -318,7 +334,29 @@ class base:
     def deploy_config_for_host(self, host):
 
         logging.info("deploy config for %s" % host)
+
+        configs = []
         
+        local_www = os.path.join(self.staging, "www")
+        local_include = os.path.join(local_www, "include")
+
+        local_config = os.path.join(local_include, "config.php")
+        local_secrets = os.path.join(local_include, "secrets.php")
+
+        remote_www = os.path.join(self.remote, "www")
+        remote_include = os.path.join(remote_www, "include")
+
+        src = " ".join((local_config, local_secrets))
+        dest = remote_include
+
+        for src in (local_config, local_secrets):
+
+            if not self._scp(host, src, dest):
+                logging.error("failed to update %s on %s" % (src, host))
+                return False
+
+        return True
+
     def url_for_host(self, host):
 
         return "%s://%s" % (self. scheme, host)
@@ -362,42 +400,58 @@ class base:
             "ssh",
             "-q",
             "-t",	# https://stackoverflow.com/questions/12480284/ssh-error-when-executing-a-remote-command-stdin-is-not-a-tty
-            # "-i",
-            # self.identity,
+            "-i",
+            self.identity,
             host
         ]
 
         ssh_cmd.extend(cmd)
 
         logging.info(" ".join(ssh_cmd))
-        
-        if not self.dryrun:
 
-            prog = subprocess.Popen(ssh_cmd, stderr=subprocess.PIPE, shell=False)
-            rsp = prog.communicate()
-            err = rsp[1]
+        if self.dryrun:
+            return True
 
-            if err != '':
-                logging.error("ssh command failed: %s" % err)
-                return False
+        return self._popen(ssh_cmd)
 
-        return True
-
-    def _scp(self, host, cmd):
+    def _scp(self, host, src, dest):
 
         scp_cmd = [
             "scp",
+            "-q",
             "-i",
             self.identity
+            src,
+            "%s:%s" % (host, dest)
         ]
-
-        scp_cmd.extend(cmd)
 
         logging.info(" ".join(scp_cmd))
                 
-        if not self.dryrun:
-            out = subprocess.check_output(cmd)
+        if self.dryrun:
+            return True
+
+        return self._popen(scp_cmd)
 
     def _rsync(self, host):
         pass
     
+
+    def _popen(self, cmd):
+
+        logging.debug("popen with %s" % " ".join(cmd))
+
+        prog = subprocess.Popen(cmd, stderr=subprocess.PIPE, shell=False)
+        rsp = prog.communicate()
+
+        # logging.debug("popen response: %s" % rsp)
+
+        err = rsp[1]
+
+        # the 'stdin: is not a tty' thing... I don't really understand
+        # why this is happening... (20160923/thisisaaronland)
+
+        if err != '' and err != "stdin: is not a tty\n":
+            logging.error("popen command failed: %s" % err)
+            return False
+
+        return True
