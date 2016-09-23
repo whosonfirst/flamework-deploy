@@ -87,7 +87,7 @@ class base:
 
     def stage_site(self):
 
-        if not lock_deploy():
+        if not self.lock_deploy():
             logging.error("failed to lock deploy")
             return False
 
@@ -95,6 +95,8 @@ class base:
         apache = os.path.join(self.staging, "apache")
         ubuntu = os.path.join(self.staging, "ubuntu")
         schema = os.path.join(self.staging, "schema")
+        extras = os.path.join(self.staging, "extras")
+        makefile = os.path.join(self.staging, "Makefile")
 
         www = os.path.join(self.staging, "www")
         include = os.path.join(www, "include")
@@ -136,12 +138,16 @@ class base:
 
         # prune
 
-        for remove in (dotgit, apache, ubuntu, schema):
+        for remove in (dotgit, apache, ubuntu, schema, extras, makefile):
 
             logging.info("remove %s" % remove)
 
             if not self.dryrun:
-                shutil.rmtree(remove)
+
+                if os.path.isdir(remove):
+                    shutil.rmtree(remove)
+                else:
+                    os.unlink(remove)
 
         # copy
 
@@ -180,12 +186,10 @@ class base:
             os.system(" ".join(cmd))
 
         # prep (config local)
-        # this is busted... (20160922/thisisaaronland)
 
-        """
         logging.info("set $GLOBALS['cfg']['environment'] in %s" % config)
 
-        replace = "s/$GLOBALS['cfg']['environment']\s*=\s*'[^']+';/$GLOBALS['cfg']['environment'] = 'staging';/"
+        replace = "s/\\['cfg'\\]\\['environment'\\]\s*=\s*'[^']+'/['cfg']['environment'] = 'staging'/"
 
         cmd = [
             self.perl,
@@ -202,9 +206,8 @@ class base:
             # (20160922/thisisaaronland)
             # subprocess.call(cmd)
             os.system(" ".join(cmd))
-        """
 
-        return selff.unlock_deploy()
+        return self.unlock_deploy()
 
     def disable_host(self, host):
 
