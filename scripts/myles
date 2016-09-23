@@ -62,11 +62,14 @@ if __name__ == '__main__':
        
        elif command == "deploy-site":
 
-              d.deploy_site()
+              logging.error("TOO SOON")
+              sys.exit(1)
+
+              # d.deploy_site()
 
        elif command == "deploy-config":
 
-              pass
+              d.deploy_config()
 
        elif command == "enable-site":
 
@@ -126,8 +129,12 @@ if __name__ == '__main__':
 
                      if d.is_host_enabled(host):
                             logging.info("%s is UP" % host)
+
+                     elif d.is_host_disabled(host):
+                            logging.warning("%s is DISABLED" % host)
+
                      else:
-                            logging.warning("%s is DOWN" % host)
+                            logging.error("%s is FUBAR" % host)
 
        else:
 
