@@ -83,7 +83,9 @@ class base:
             if ln.startswith("#"):
                 continue
 
-            yield ln
+            parts = ln.split("#")
+            
+            yield parts[0].strip()
 
     def stage_site(self):
 

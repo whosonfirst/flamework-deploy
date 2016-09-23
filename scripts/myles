@@ -74,6 +74,15 @@ if __name__ == '__main__':
        elif command == "disable-site":
               pass
 
+       elif command == "status":
+              
+              for host in d.hosts():
+
+                     if d.is_host_enabled(host):
+                            logging.info("%s is UP" % host)
+                     else:
+                            logging.warning("%s is DOWN" % host)
+
        else:
 
               logging.error("Unknown command")
