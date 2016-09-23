@@ -200,7 +200,7 @@ class base:
 
         logging.info("set $GLOBALS['cfg']['environment'] in %s" % config)
 
-        replace = "s/\\['cfg'\\]\\['environment'\\]\s*=\s*'[^']+'/['cfg']['environment'] = 'staging'/"
+        replace = "s/\\['cfg'\\]\\['environment'\\]\s*=\s*'[^']+'/['cfg']['environment'] = 'prod'/"
 
         cmd = [
             self.perl,
@@ -320,9 +320,8 @@ class base:
             logging.debug("%s is not disabled, waiting" % host)
             time.sleep(1)
 
-        # DO STUFF
-
-        logging.info("DO STUFF FOR %s" % host)
+        if not self._rsync(host, self.staging, self.remote):
+            return False
 
         self.enable_host(host)
 
@@ -330,6 +329,8 @@ class base:
 
             logging.debug("%s is not enabled, waiting" % host)            
             time.sleep(1)
+
+        return True
 
     def deploy_config_for_host(self, host):
 
@@ -400,8 +401,7 @@ class base:
             "ssh",
             "-q",
             "-t",	# https://stackoverflow.com/questions/12480284/ssh-error-when-executing-a-remote-command-stdin-is-not-a-tty
-            "-i",
-            self.identity,
+            "-i", self.identity,
             host
         ]
 
@@ -416,13 +416,14 @@ class base:
 
     def _scp(self, host, src, dest):
 
+        dest = "%s:%s" % (host, dest)
+
         scp_cmd = [
             "scp",
             "-q",
-            "-i",
-            self.identity
+            "-i", self.identity,
             src,
-            "%s:%s" % (host, dest)
+            dest,
         ]
 
         logging.info(" ".join(scp_cmd))
@@ -432,9 +433,31 @@ class base:
 
         return self._popen(scp_cmd)
 
-    def _rsync(self, host):
-        pass
-    
+    def _rsync(self, host, src, dest):
+
+        dest = dest.rstrip("/") + "/"
+        dest = "%s:%s" % (host, dest)
+
+        rsync_cmd = [
+            self.rsync,
+            "-e",
+            "\"ssh -o IdentityFile=%s\"" % self.identity,
+            # "ssh",
+            "-a", "-v", "-z",
+            "--delete",
+            "--safe-links",
+            "--cvs-exclude",
+            "--exclude=templates_c",
+            src,
+            dest,
+        ]
+
+        logging.info(" ".join(rsync_cmd))
+                
+        if self.dryrun:
+            return True
+
+        return self._popen(scp_cmd)
 
     def _popen(self, cmd):
 

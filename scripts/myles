@@ -64,10 +64,9 @@ if __name__ == '__main__':
        
        elif command == "deploy-site":
 
-              logging.error("TOO SOON")
-              sys.exit(1)
-
-              # d.deploy_site()
+              if not d.deploy_site():
+                     logging.error("failed to deploy site")
+                     sys.exit(1)
 
        elif command == "deploy-config":
 
