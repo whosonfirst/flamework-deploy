@@ -7,6 +7,7 @@ import logging
 import time
 import shutil
 import subprocess
+import tempfile
 
 import requests
 
@@ -21,6 +22,9 @@ class base:
         self.hostsfile = cfg.get(name, 'hosts')
         self.identity = cfg.get(name, 'identity')
         self.config = cfg.get(name, 'config')                
+
+        lockname = "%s.lock" % self.name
+        self.lock = os.path.join(tempfile.gettempdir(), lockname)
 
         self.dryrun = kwargs.get('dryrun', False)
         self.scheme = kwargs.get('scheme', 'http')	# DO NOT MAKE ME THE DEFAULT...
@@ -80,6 +84,10 @@ class base:
             yield ln
 
     def stage_site(self):
+
+        if not lock_deploy():
+            logging.error("failed to lock deploy")
+            return False
 
         dotgit = os.path.join(self.staging, ".git")
         apache = os.path.join(self.staging, "apache")
@@ -194,6 +202,8 @@ class base:
             os.system(" ".join(cmd))
         """
 
+        return selff.unlock_deploy()
+
     def disable_host(self, host):
 
         logging.info("disable host %s" % host)
@@ -259,8 +269,14 @@ class base:
         
     def deploy_site(self):
 
+        if not self.lock_deploy():
+            logging.error("failed to lock deploy")
+            return False
+
         for host in self.hosts():
             self.deploy_site_for_host(host)
+
+        return self.unlock_deploy()
 
     def deploy_config(self):
 
@@ -296,7 +312,40 @@ class base:
     def url_for_host(self, host):
 
         return "%s://%s" % (self. scheme, host)
-    
+
+    def lock_deploy(self):
+
+        lock = self.deploy_lock()
+
+        if os.path.exists(lock):
+            logging.error("lockfile (%s) already exists" % lock)
+            return False
+
+        t = str(time.time())
+
+        fh = open(lock, "w")
+        fh.write(t)
+        fh.close()
+
+        return True
+
+    def unlock_deploy(self):
+
+        lock = self.deploy_lock()
+
+        if os.path.exists(lock):
+            os.unlink(lock)
+        
+        return True
+
+    def is_deploy_locked(self):
+
+        lock = self.deploy_lock()
+        return os.path.exists(lock)
+
+    def deploy_lock(self):
+        return self.lock
+
     def _ssh(self, host, cmd):
 
         ssh_cmd = [
