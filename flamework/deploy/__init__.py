@@ -225,7 +225,7 @@ class base:
         logging.info("disable host %s" % host)
         
         bin = os.path.join(self.remote, "bin")
-        disable = os.path.join(bin, "disable-site.php")		# https://github.com/whosonfirst/flamework-tools/blob/master/flamework-bin/disable_site.sh
+        disable = os.path.join(bin, "disable_site.sh")		# https://github.com/whosonfirst/flamework-tools/blob/master/flamework-bin/disable_site.sh
         
         cmd = [
             disable
@@ -272,9 +272,7 @@ class base:
         if self.dryrun:
             return True
 
-        # because this: https://github.com/whosonfirst/flamework/blob/master/www/include/init.php#L435-L460
-        
-        if rsp.status_code == 502:
+        if rsp.status_code == 420:
             return True
 
         return False
@@ -362,8 +360,10 @@ class base:
 
         ssh_cmd = [
             "ssh",
-            "-i",
-            self.identity,
+            "-q",
+            "-t",	# https://stackoverflow.com/questions/12480284/ssh-error-when-executing-a-remote-command-stdin-is-not-a-tty
+            # "-i",
+            # self.identity,
             host
         ]
 
@@ -372,7 +372,16 @@ class base:
         logging.info(" ".join(ssh_cmd))
         
         if not self.dryrun:
-            out = subprocess.check_output(cmd)
+
+            prog = subprocess.Popen(ssh_cmd, stderr=subprocess.PIPE, shell=False)
+            rsp = prog.communicate()
+            err = rsp[1]
+
+            if err != '':
+                logging.error("ssh command failed: %s" % err)
+                return False
+
+        return True
 
     def _scp(self, host, cmd):
 

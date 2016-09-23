@@ -80,7 +80,19 @@ if __name__ == '__main__':
                      logging.error("%s is not a host Myles knows about")
                      sys.exit(1)
 
-              d.enable_host(host)
+              if d.is_host_enabled(host):
+                     logging.info("%s is already enabled" % host)
+                     sys.exit(0)
+
+              if not d.enable_host(host):
+                     logging.error("failed to enable host %s" % host)
+                     sys.exit(1)
+
+              if not d.is_host_enabled(host):
+                     logging.error("enabling %s appeared to succeed but it is still not enabled" % host)
+                     sys.exit(1)
+
+              logging.info("%s is enabled" %host)
 
        elif command == "disable-site":
 
@@ -94,7 +106,19 @@ if __name__ == '__main__':
                      logging.error("%s is not a host Myles knows about")
                      sys.exit(1)
 
-              d.disable_host(host)
+              if d.is_host_disabled(host):
+                     logging.info("%s is already disabled" % host)
+                     sys.exit(0)
+
+              if not d.disable_host(host):
+                     logging.error("failed to disable %s" % host)
+                     sys.exit(1)
+
+              if not d.is_host_disabled(host):
+                     logging.error("disabling %s appeared to succeed but it is still not (properly) disabled")
+                     sys.exit(1)
+
+              logging.info("%s is now disabled" % host)
 
        elif command == "status":
               
