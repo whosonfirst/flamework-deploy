@@ -87,6 +87,15 @@ class base:
             
             yield parts[0].strip()
 
+    def is_valid_host(self, host):
+
+        for test in self.hosts():
+
+            if test == host:
+                return True
+
+        return False
+
     def stage_site(self):
 
         if not self.lock_deploy():
@@ -216,11 +225,9 @@ class base:
         logging.info("disable host %s" % host)
         
         bin = os.path.join(self.remote, "bin")
-        disable = os.path.join(bin, "disable-site.php")
+        disable = os.path.join(bin, "disable-site.php")		# https://github.com/whosonfirst/flamework-tools/blob/master/flamework-bin/disable_site.sh
         
         cmd = [
-            "php",
-            "-q",
             disable
         ]
 
@@ -231,11 +238,9 @@ class base:
         logging.info("enable host %s" % host)
                 
         bin = os.path.join(self.remote, "bin")
-        enable = os.path.join(bin, "enable-site.php")
+        enable = os.path.join(bin, "enable_site.sh")		# https://github.com/whosonfirst/flamework-tools/blob/master/flamework-bin/enable_site.sh
         
         cmd = [
-            "php",
-            "-q",
             enable
         ]
 
@@ -359,6 +364,7 @@ class base:
             "ssh",
             "-i",
             self.identity,
+            host
         ]
 
         ssh_cmd.extend(cmd)

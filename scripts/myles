@@ -69,10 +69,32 @@ if __name__ == '__main__':
               pass
 
        elif command == "enable-site":
-              pass
+
+              if len(args) != 2:
+                     logging.error("You forget to include a host to enable")
+                     sys.exit(1)
+
+              host = args[1]
+
+              if not d.is_valid_host(host):
+                     logging.error("%s is not a host Myles knows about")
+                     sys.exit(1)
+
+              d.enable_host(host)
 
        elif command == "disable-site":
-              pass
+
+              if len(args) != 2:
+                     logging.error("You forget to include a host to disable")
+                     sys.exit(1)
+
+              host = args[1]
+
+              if not d.is_valid_host(host):
+                     logging.error("%s is not a host Myles knows about")
+                     sys.exit(1)
+
+              d.disable_host(host)
 
        elif command == "status":
               
