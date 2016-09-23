@@ -8,6 +8,8 @@ import time
 import shutil
 import subprocess
 
+import requests
+
 class base:
 
     def __init__(self, name, cfg, **kwargs):
@@ -16,11 +18,12 @@ class base:
         self.source = cfg.get(name, 'source')
         self.staging = cfg.get(name, 'staging') 
         self.remote = cfg.get(name, 'remote')        
-        self.hosts = cfg.get(name, 'hosts')
+        self.hostsfile = cfg.get(name, 'hosts')
         self.identity = cfg.get(name, 'identity')
         self.config = cfg.get(name, 'config')                
 
         self.dryrun = kwargs.get('dryrun', False)
+        self.scheme = kwargs.get('scheme', 'http')	# DO NOT MAKE ME THE DEFAULT...
 
         self.ssh = kwargs.get('ssh', 'ssh')
         self.scp = kwargs.get('ssh', 'scp')
@@ -33,7 +36,7 @@ class base:
         self.staging = os.path.abspath(self.staging)
         self.config = os.path.abspath(self.config)
 
-        self.hosts = os.path.abspath(self.hosts)
+        self.hostsfile = os.path.abspath(self.hostsfile)
         self.identity = os.path.abspath(self.identity)
 
         for path in (self.staging, self.config):
@@ -44,7 +47,7 @@ class base:
             if not os.path.isdir(path):
                 raise Exception, "%s is not a directory" % path
 
-        for path in (self.hosts, self.identity):
+        for path in (self.hostsfile, self.identity):
 
             if not os.path.exists(path):
                 raise Exception, "%s does not exist" % path
@@ -63,8 +66,8 @@ class base:
 
     def hosts(self):
 
-        hosts_txt = os.path.abspath(self.hosts)
-
+        hosts_txt = os.path.abspath(self.hostsfile)
+        
         fh = open(hosts_txt, "r")
 
         for ln in fh.readlines():
@@ -86,7 +89,10 @@ class base:
         www = os.path.join(self.staging, "www")
         include = os.path.join(www, "include")
 
+        config_app = os.path.join(include, "config.php")
+        config_staging = os.path.join(include, "config_staging.php")
         config_local = os.path.join(include, "config_local.php")
+
         htaccess = os.path.join(www, ".htaccess")
 
         # clean up
@@ -157,25 +163,36 @@ class base:
         logging.info(" ".join(cmd))
 
         if not self.dryrun:
-            subprocess.check_output(cmd, shell=True)
+
+            # not happy about this but it appears to be the only way?
+            # (20160922/thisisaaronland)
+            # subprocess.call(cmd)
+            os.system(" ".join(cmd))
 
         # prep (config local)
+        # this is busted... (20160922/thisisaaronland)
 
-        logging.info("set $GLOBALS['cfg']['environment'] in %s" % config_local)
+        """
+        logging.info("set $GLOBALS['cfg']['environment'] in %s" % config)
 
-        replace = "s/$GLOBALS['cfg']['environment']\s*=\s*['\\\"][^'\\\"]+['\\\"];/$GLOBALS['cfg']['environment'] = 'staging';/"
+        replace = "s/$GLOBALS['cfg']['environment']\s*=\s*'[^']+';/$GLOBALS['cfg']['environment'] = 'staging';/"
 
         cmd = [
             self.perl,
             "-p", "-i", "-e",
             "\"%s\"" % replace,
-            config_local
+            config_app
         ]
 
         logging.info(" ".join(cmd))
 
         if not self.dryrun:
-            subprocess.check_output(cmd, shell=True)
+
+            # not happy about this but it appears to be the only way?
+            # (20160922/thisisaaronland)
+            # subprocess.call(cmd)
+            os.system(" ".join(cmd))
+        """
 
     def disable_host(self, host):
 
@@ -262,6 +279,8 @@ class base:
             time.sleep(1)
 
         # DO STUFF
+
+        logging.info("DO STUFF FOR %s" % host)
 
         self.enable_host(host)
 
