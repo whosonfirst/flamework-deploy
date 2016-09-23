@@ -22,6 +22,12 @@ class base:
 
         self.dryrun = kwargs.get('dryrun', False)
 
+        self.ssh = kwargs.get('ssh', 'ssh')
+        self.scp = kwargs.get('ssh', 'scp')
+        self.rsync = kwargs.get('rsync', 'rsync')
+        self.git = kwargs.get('git', 'git')
+        self.perl = kwargs.get('perl', 'perl')
+
         #
 
         self.staging = os.path.abspath(self.staging)
@@ -73,12 +79,17 @@ class base:
     def stage_site(self):
 
         dotgit = os.path.join(self.staging, ".git")
+        apache = os.path.join(self.staging, "apache")
+        ubuntu = os.path.join(self.staging, "ubuntu")
+        schema = os.path.join(self.staging, "schema")
 
         www = os.path.join(self.staging, "www")
         include = os.path.join(www, "include")
 
-        config_local = os.path.join(include, "config_local/.php")
+        config_local = os.path.join(include, "config_local.php")
         htaccess = os.path.join(www, ".htaccess")
+
+        # clean up
 
         logging.info("purge contents of %s" % self.staging)
 
@@ -89,16 +100,34 @@ class base:
                     os.unlink(os.path.join(root, f))
                 for d in dirs:
                     shutil.rmtree(os.path.join(root, d))
-                        
+
+        # clone 
+
         logging.info("clone %s in to %s" % (self.source, self.staging))
 
-        if not self.dryrun:
-            pass	# PLEASE WRITE ME
+        cmd = [
+            self.git,
+            "clone",
+            self.source,
+            self.staging
+        ]
 
-        logging.info("remove %s" % dotgit)
+        logging.info(" ".join(cmd))
 
         if not self.dryrun:
-            shutil.rmtree(dotgit)
+            out = subprocess.check_output(cmd)
+            logging.debug(out)
+
+        # prune
+
+        for remove in (dotgit, apache, ubuntu, schema):
+
+            logging.info("remove %s" % remove)
+
+            if not self.dryrun:
+                shutil.rmtree(remove)
+
+        # copy
 
         for config in ('config_local.php', 'config_staging.php', 'secrets.php'):
 
@@ -112,15 +141,41 @@ class base:
                 if not self.dryrun:
                     shutil.copyfile(local_path, staging_path)
         
+        # prep (htaccess)
+
         logging.info("ensure errors are disabled in %s" % htaccess)
 
+        replace = "s/php_flag display_errors\s+on/php_flag display_errors off/"
+
+        cmd = [
+            self.perl,
+            "-p", "-i", "-e",
+            "\"%s\"" % replace,
+            htaccess
+        ]
+
+        logging.info(" ".join(cmd))
+
         if not self.dryrun:
-            pass	# PLEASE WRITE ME
+            subprocess.check_output(cmd, shell=True)
+
+        # prep (config local)
 
         logging.info("set $GLOBALS['cfg']['environment'] in %s" % config_local)
 
+        replace = "s/$GLOBALS['cfg']['environment']\s*=\s*['\\\"][^'\\\"]+['\\\"];/$GLOBALS['cfg']['environment'] = 'staging';/"
+
+        cmd = [
+            self.perl,
+            "-p", "-i", "-e",
+            "\"%s\"" % replace,
+            config_local
+        ]
+
+        logging.info(" ".join(cmd))
+
         if not self.dryrun:
-            pass	# PLEASE WRITE ME
+            subprocess.check_output(cmd, shell=True)
 
     def disable_host(self, host):
 
