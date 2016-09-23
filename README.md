@@ -35,3 +35,4 @@ INFO:root:set $GLOBALS['cfg']['environment'] in /usr/local/mapzen/api/staging/ww
 
 ### disable-host
 
+### status

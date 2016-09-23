@@ -194,6 +194,7 @@ class base:
             # not happy about this but it appears to be the only way?
             # (20160922/thisisaaronland)
             # subprocess.call(cmd)
+
             os.system(" ".join(cmd))
 
         # prep (config local)
@@ -216,6 +217,7 @@ class base:
             # not happy about this but it appears to be the only way?
             # (20160922/thisisaaronland)
             # subprocess.call(cmd)
+
             os.system(" ".join(cmd))
 
         return self.unlock_deploy()
@@ -341,18 +343,21 @@ class base:
         local_www = os.path.join(self.staging, "www")
         local_include = os.path.join(local_www, "include")
 
-        local_config = os.path.join(local_include, "config.php")
-        local_secrets = os.path.join(local_include, "secrets.php")
+        config = os.path.join(local_include, "config.php")
+        config_local = os.path.join(local_include, "config_local.php")
+        secrets = os.path.join(local_include, "secrets.php")
 
         remote_www = os.path.join(self.remote, "www")
         remote_include = os.path.join(remote_www, "include")
 
-        src = " ".join((local_config, local_secrets))
-        dest = remote_include
+        config_files = (config, secrets)
 
-        for src in (local_config, local_secrets):
+        if os.path.exists(config_local):
+            config_files.append(config_local)
 
-            if not self._scp(host, src, dest):
+        for cfg in config_files:
+
+            if not self._scp(host, cfg, remote_include):
                 logging.error("failed to update %s on %s" % (src, host))
                 return False
 
@@ -435,7 +440,7 @@ class base:
 
     def _rsync(self, host, src, dest):
 
-        dest = dest.rstrip("/") + "/"
+        src = src.rstrip("/") + "/"
         dest = "%s:%s" % (host, dest)
 
         rsync_cmd = [
@@ -443,11 +448,13 @@ class base:
             "-e",
             "\"ssh -o IdentityFile=%s\"" % self.identity,
             # "ssh",
-            "-a", "-v", "-z",
+            "-a", "-z",
+            # "-v",
             "--delete",
             "--safe-links",
             "--cvs-exclude",
             "--exclude=templates_c",
+            "--exclude=config_staging.php",
             src,
             dest,
         ]
@@ -457,7 +464,7 @@ class base:
         if self.dryrun:
             return True
 
-        return self._popen(scp_cmd)
+        return self._popen(rsync_cmd)
 
     def _popen(self, cmd):
 
