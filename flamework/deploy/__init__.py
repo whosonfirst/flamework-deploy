@@ -23,6 +23,8 @@ class base:
         self.identity = cfg.get(name, 'identity')
         self.config = cfg.get(name, 'config')                
 
+        # sudo make me required in the config...
+
         lockname = "%s.lock" % self.name
         self.lock = os.path.join(tempfile.gettempdir(), lockname)
 
