@@ -112,9 +112,9 @@ class base:
         www = os.path.join(self.staging, "www")
         include = os.path.join(www, "include")
 
-        config_app = os.path.join(include, "config.php")
+        config_global = os.path.join(include, "config.php")
+        config_local = os.path.join(self.config, "config_local.php")
         config_staging = os.path.join(include, "config_staging.php")
-        config_local = os.path.join(include, "config_local.php")
 
         htaccess = os.path.join(www, ".htaccess")
 
@@ -160,9 +160,26 @@ class base:
                 else:
                     os.unlink(remove)
 
+        # append
+        
+        logging.info("append custom config to global config")
+
+        if not self.dryrun:
+
+            global_fh = open(config_global, "a")
+            local_fh = open(config_local, "r")
+
+            global_fh.write("\n")
+
+            for ln in local_fh.readlines():
+                global_fh.write(ln)
+
+            global_fh.close()
+            local_fh.close()
+
         # copy
 
-        for config in ('config_local.php', 'config_staging.php', 'secrets.php'):
+        for config in ('config_staging.php', 'secrets.php'):
 
             local_path = os.path.join(self.config, config)
             staging_path = os.path.join(include, config)
@@ -207,7 +224,7 @@ class base:
             self.perl,
             "-p", "-i", "-e",
             "\"%s\"" % replace,
-            config_app
+            config_global
         ]
 
         logging.info(" ".join(cmd))
