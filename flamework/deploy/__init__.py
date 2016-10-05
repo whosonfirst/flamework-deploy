@@ -107,7 +107,6 @@ class base:
         ubuntu = os.path.join(self.staging, "ubuntu")
         schema = os.path.join(self.staging, "schema")
         extras = os.path.join(self.staging, "extras")
-        makefile = os.path.join(self.staging, "Makefile")
 
         www = os.path.join(self.staging, "www")
         include = os.path.join(www, "include")
@@ -149,7 +148,7 @@ class base:
 
         # prune
 
-        for remove in (dotgit, apache, ubuntu, schema, extras, makefile):
+        for remove in (dotgit, apache, ubuntu, schema, extras):
 
             logging.info("remove %s" % remove)
 
@@ -294,6 +293,11 @@ class base:
         if rsp.status_code == 420:
             return True
 
+        # sudo make me a flag... (20161005/thisisaaronland)
+
+        if rsp.status_code == 500:
+            return True
+
         return False
         
     def deploy_site(self):
@@ -423,7 +427,7 @@ class base:
             "ssh",
             "-q",
             "-t",	# https://stackoverflow.com/questions/12480284/ssh-error-when-executing-a-remote-command-stdin-is-not-a-tty
-            "-i", self.identity,
+            # "-i", self.identity,
             host
         ]
 
@@ -443,7 +447,7 @@ class base:
         scp_cmd = [
             "scp",
             "-q",
-            "-i", self.identity,
+            # "-i", self.identity,
             src,
             dest,
         ]
@@ -463,8 +467,8 @@ class base:
         rsync_cmd = [
             self.rsync,
             "-e",
-            "\"ssh -o IdentityFile=%s\"" % self.identity,
-            # "ssh",
+            # "\"ssh -o IdentityFile=%s\"" % self.identity,
+            "ssh",
             "-a", "-z",
             # "-v",
             "--delete",
