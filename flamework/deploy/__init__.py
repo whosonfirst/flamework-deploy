@@ -13,9 +13,32 @@ import requests
 
 class addr:
 
-    def __init__ (self, host, port):
+    def __init__ (self, host, port, **kwargs):
+        self.scheme = kwargs.get('scheme', 'http')
         self.host = host
         self.port = port
+
+    def __str__ (self): 
+        return self.string()
+
+    def __repr__(self):
+        return self.string()
+
+    def hostname(self):
+        return self.host
+
+    def string(self):
+        return "%s %s (%s)" % (self.scheme.upper(), self.host, self.port)
+
+    def url(self):
+
+        url = "%s://%s" % (self. scheme, self.hostname())
+
+        if self.port != None:
+            url = "%s:%s" % (url, self.port)
+
+        return url
+
 
 class base:
 
@@ -91,19 +114,22 @@ class base:
 
             parts = ln.split("#")
 
-            addr = parts[0].strip()
-            addr = addr.split(":")
+            hostport = parts[0].strip()
+            hostport = hostport.split(":")
 
-            if len(addr) == 1:
-                addr.append(None)
+            if len(hostport) == 1:
+                hostport.append(None)
 
-            yield addr
+            # I hate setting the scheme here...
+            # (20161019/thisisaaronland)
+
+            yield addr(*hostport, scheme=self.scheme)
 
     def is_valid_host(self, host):
 
         for addr in self.hosts():
 
-            if addr[0] == host:
+            if addr.hostname() == host:
                 return True
 
         return False
@@ -278,7 +304,7 @@ class base:
 
     def is_host_enabled(self, addr):
 
-        url = self.url_for_host(addr)
+        url = addr.url()
 
         logging.info("check if %s is enabled (%s)" % (addr, url))
 
@@ -294,13 +320,14 @@ class base:
 
     def is_host_disabled(self, addr):
 
-        url = self.url_for_host(addr)
-        rsp = requests.get(url)
+        url = addr.url()
 
         logging.info("check if %s is disabled (%s)" % (addr, url))
 
         if self.dryrun:
             return True
+
+        rsp = requests.get(url)
 
         if rsp.status_code == 420:
             return True
@@ -396,15 +423,6 @@ class base:
 
         return True
 
-    def url_for_host(self, addr):
-
-        url = "%s://%s" % (self. scheme, addr[0])
-
-        if addr[1] != None:
-            url = "%s:%s" % (url, addr[1])
-
-        return url
-
     def lock_deploy(self):
 
         lock = self.deploy_lock()
@@ -445,7 +463,7 @@ class base:
             "-q",
             "-t",	# https://stackoverflow.com/questions/12480284/ssh-error-when-executing-a-remote-command-stdin-is-not-a-tty
             # "-i", self.identity,
-            addr[0]
+            addr.hostname()
         ]
 
         ssh_cmd.extend(cmd)
@@ -459,7 +477,7 @@ class base:
 
     def _scp(self, addr, src, dest):
 
-        dest = "%s:%s" % (addr[0], dest)
+        dest = "%s:%s" % (addr.hostname(), dest)
 
         scp_cmd = [
             "scp",
@@ -479,7 +497,7 @@ class base:
     def _rsync(self, addr, src, dest):
 
         src = src.rstrip("/") + "/"
-        dest = "%s:%s" % (addr[0], dest)
+        dest = "%s:%s" % (addr.hostname(), dest)
 
         rsync_cmd = [
             self.rsync,
