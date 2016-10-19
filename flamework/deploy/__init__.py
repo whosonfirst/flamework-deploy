@@ -11,6 +11,12 @@ import tempfile
 
 import requests
 
+class addr:
+
+    def __init__ (self, host, port):
+        self.host = host
+        self.port = port
+
 class base:
 
     def __init__(self, name, cfg, **kwargs):
@@ -84,14 +90,20 @@ class base:
                 continue
 
             parts = ln.split("#")
-            
-            yield parts[0].strip()
+
+            addr = parts[0].strip()
+            addr = addr.split(":")
+
+            if len(addr) == 1:
+                addr.append(None)
+
+            yield addr
 
     def is_valid_host(self, host):
 
-        for test in self.hosts():
+        for addr in self.hosts():
 
-            if test == host:
+            if addr[0] == host:
                 return True
 
         return False
@@ -264,11 +276,11 @@ class base:
 
         return self._ssh(host, cmd)
 
-    def is_host_enabled(self, host):
+    def is_host_enabled(self, addr):
 
-        url = self.url_for_host(host)
+        url = self.url_for_host(addr)
 
-        logging.info("check if %s is enabled (%s)" % (host, url))
+        logging.info("check if %s is enabled (%s)" % (addr, url))
 
         if self.dryrun:
             return True
@@ -280,12 +292,12 @@ class base:
 
         return False
 
-    def is_host_disabled(self, host):
+    def is_host_disabled(self, addr):
 
-        url = self.url_for_host(host)
+        url = self.url_for_host(addr)
         rsp = requests.get(url)
 
-        logging.info("check if %s is disabled (%s)" % (host, url))
+        logging.info("check if %s is disabled (%s)" % (addr, url))
 
         if self.dryrun:
             return True
@@ -306,9 +318,9 @@ class base:
             logging.error("failed to lock deploy")
             return False
 
-        for host in self.hosts():
+        for addr in self.hosts():
 
-            if not self.deploy_site_for_host(host):
+            if not self.deploy_site_for_host(addr):
                 return False
 
         # see the way the deploy lock isn't being removed if there's
@@ -322,9 +334,9 @@ class base:
             logging.error("failed to lock deploy")
             return False
 
-        for host in self.hosts():
+        for addr in self.hosts():
 
-            if not self.deploy_config_for_host(host):
+            if not self.deploy_config_for_host(addr):
                 return False
 
         # see the way the deploy lock isn't being removed if there's
@@ -332,32 +344,32 @@ class base:
             
         return self.unlock_deploy()
 
-    def deploy_site_for_host(self, host):
+    def deploy_site_for_host(self, addr):
 
-        logging.info("deploy site for %s" % host)
+        logging.info("deploy site for %s" % addr)
         
-        self.disable_host(host)
+        self.disable_host(addr)
 
-        while not self.is_host_disabled(host):
+        while not self.is_host_disabled(addr):
 
-            logging.debug("%s is not disabled, waiting" % host)
+            logging.debug("%s is not disabled, waiting" % addr)
             time.sleep(1)
 
-        if not self._rsync(host, self.staging, self.remote):
+        if not self._rsync(addr, self.staging, self.remote):
             return False
 
-        self.enable_host(host)
+        self.enable_host(addr)
 
-        while not self.is_host_enabled(host):
+        while not self.is_host_enabled(addr):
 
-            logging.debug("%s is not enabled, waiting" % host)            
+            logging.debug("%s is not enabled, waiting" % addr)            
             time.sleep(1)
 
         return True
 
-    def deploy_config_for_host(self, host):
+    def deploy_config_for_host(self, addr):
 
-        logging.info("deploy config for %s" % host)
+        logging.info("deploy config for %s" % addr)
 
         configs = []
         
@@ -384,9 +396,14 @@ class base:
 
         return True
 
-    def url_for_host(self, host):
+    def url_for_host(self, addr):
 
-        return "%s://%s" % (self. scheme, host)
+        url = "%s://%s" % (self. scheme, addr[0])
+
+        if addr[1] != None:
+            url = "%s:%s" % (url, addr[1])
+
+        return url
 
     def lock_deploy(self):
 
@@ -421,14 +438,14 @@ class base:
     def deploy_lock(self):
         return self.lock
 
-    def _ssh(self, host, cmd):
+    def _ssh(self, addr, cmd):
 
         ssh_cmd = [
             "ssh",
             "-q",
             "-t",	# https://stackoverflow.com/questions/12480284/ssh-error-when-executing-a-remote-command-stdin-is-not-a-tty
             # "-i", self.identity,
-            host
+            addr[0]
         ]
 
         ssh_cmd.extend(cmd)
@@ -440,9 +457,9 @@ class base:
 
         return self._popen(ssh_cmd)
 
-    def _scp(self, host, src, dest):
+    def _scp(self, addr, src, dest):
 
-        dest = "%s:%s" % (host, dest)
+        dest = "%s:%s" % (addr[0], dest)
 
         scp_cmd = [
             "scp",
@@ -459,10 +476,10 @@ class base:
 
         return self._popen(scp_cmd)
 
-    def _rsync(self, host, src, dest):
+    def _rsync(self, addr, src, dest):
 
         src = src.rstrip("/") + "/"
-        dest = "%s:%s" % (host, dest)
+        dest = "%s:%s" % (addr[0], dest)
 
         rsync_cmd = [
             self.rsync,
