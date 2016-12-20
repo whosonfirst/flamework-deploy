@@ -4,6 +4,7 @@
 import sys
 import os
 import logging
+import time
 
 import optparse
 import ConfigParser
@@ -96,6 +97,8 @@ if __name__ == '__main__':
                      logging.error("failed to enable host %s" % host)
                      sys.exit(1)
 
+              time.sleep(1)
+
               if not d.is_host_enabled(addr):
                      logging.error("enabling %s appeared to succeed but it is still not enabled" % host)
                      sys.exit(1)
@@ -123,6 +126,8 @@ if __name__ == '__main__':
               if not d.disable_host(addr):
                      logging.error("failed to disable %s" % host)
                      sys.exit(1)
+
+              time.sleep(1)
 
               if not d.is_host_disabled(addr):
                      logging.error("disabling %s appeared to succeed but it is still not (properly) disabled" % host)
