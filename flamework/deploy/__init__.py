@@ -134,6 +134,15 @@ class base:
 
         return False
 
+    def host_to_addr(self, host):
+
+        for addr in self.hosts():
+
+            if addr.hostname() == host:
+                return addr
+
+        return None
+
     def stage_site(self):
 
         if not self.lock_deploy():
@@ -320,6 +329,7 @@ class base:
 
     def is_host_disabled(self, addr):
 
+        print "addr %s" % addr
         url = addr.url()
 
         logging.info("check if %s is disabled (%s)" % (addr, url))
