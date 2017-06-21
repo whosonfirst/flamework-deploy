@@ -563,6 +563,7 @@ class base:
             "--cvs-exclude",
             "--exclude=templates_c",
             "--exclude=config_staging.php",
+            "--exclude=config_dev.php",
             src,
             dest,
         ])
