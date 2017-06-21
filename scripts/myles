@@ -4,6 +4,7 @@
 import sys
 import os
 import logging
+import time
 
 import optparse
 import ConfigParser
@@ -74,7 +75,7 @@ if __name__ == '__main__':
                      logging.error("failed to deploy config")
                      sys.exit(1)
 
-       elif command == "enable-site":
+       elif command == "enable-host":
 
               if len(args) != 2:
                      logging.error("You forget to include a host to enable")
@@ -83,24 +84,28 @@ if __name__ == '__main__':
               host = args[1]
 
               if not d.is_valid_host(host):
-                     logging.error("%s is not a host Myles knows about")
+                     logging.error("%s is not a host Myles knows about % host")
                      sys.exit(1)
 
-              if d.is_host_enabled(host):
+              addr = d.host_to_addr(host)
+
+              if d.is_host_enabled(addr):
                      logging.info("%s is already enabled" % host)
                      sys.exit(0)
 
-              if not d.enable_host(host):
+              if not d.enable_host(addr):
                      logging.error("failed to enable host %s" % host)
                      sys.exit(1)
 
-              if not d.is_host_enabled(host):
+              time.sleep(1)
+
+              if not d.is_host_enabled(addr):
                      logging.error("enabling %s appeared to succeed but it is still not enabled" % host)
                      sys.exit(1)
 
-              logging.info("%s is enabled" %host)
+              logging.info("%s is enabled" % host)
 
-       elif command == "disable-site":
+       elif command == "disable-host":
 
               if len(args) != 2:
                      logging.error("You forget to include a host to disable")
@@ -109,19 +114,23 @@ if __name__ == '__main__':
               host = args[1]
 
               if not d.is_valid_host(host):
-                     logging.error("%s is not a host Myles knows about")
+                     logging.error("%s is not a host Myles knows about" % host)
                      sys.exit(1)
 
-              if d.is_host_disabled(host):
+              addr = d.host_to_addr(host)
+
+              if d.is_host_disabled(addr):
                      logging.info("%s is already disabled" % host)
                      sys.exit(0)
 
-              if not d.disable_host(host):
+              if not d.disable_host(addr):
                      logging.error("failed to disable %s" % host)
                      sys.exit(1)
 
-              if not d.is_host_disabled(host):
-                     logging.error("disabling %s appeared to succeed but it is still not (properly) disabled")
+              time.sleep(1)
+
+              if not d.is_host_disabled(addr):
+                     logging.error("disabling %s appeared to succeed but it is still not (properly) disabled" % host)
                      sys.exit(1)
 
               logging.info("%s is now disabled" % host)
