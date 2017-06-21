@@ -539,6 +539,20 @@ class base:
 
         if self.identity != None:
 
+            """
+            OMGWTF: when running as the user who owns /path/to/identityfile why does the
+            following fail with this error... especially when calling subprocess.Popen
+            when 'ssh -i /path/to/identityfile' works fine...???
+            (20170620/thisisaaronland)
+
+            ERROR:root:popen command failed: rsync: Failed to exec ssh -o IdentityFile=/path/to/identityfile: No such file or directory (2)
+            rsync error: error in IPC code (code 14) at pipe.c(85) [sender=3.1.0]
+            rsync: connection unexpectedly closed (0 bytes received so far) [sender]
+            rsync error: error in IPC code (code 14) at io.c(226) [sender=3.1.0]
+
+            https://github.com/whosonfirst/flamework-deploy/issues/3
+            """
+
             rsync_cmd.extend([
                 "-e",
                 "\"ssh -o IdentityFile=%s\"" % self.identity,
