@@ -539,19 +539,7 @@ class base:
 
         if self.identity != None:
 
-            """
-            OMGWTF: when running as the user who owns /path/to/identityfile why does the
-            following fail with this error... especially when calling subprocess.Popen
-            when 'ssh -i /path/to/identityfile' works fine...???
-            (20170620/thisisaaronland)
-
-            ERROR:root:popen command failed: rsync: Failed to exec ssh -o IdentityFile=/path/to/identityfile: No such file or directory (2)
-            rsync error: error in IPC code (code 14) at pipe.c(85) [sender=3.1.0]
-            rsync: connection unexpectedly closed (0 bytes received so far) [sender]
-            rsync error: error in IPC code (code 14) at io.c(226) [sender=3.1.0]
-
-            https://github.com/whosonfirst/flamework-deploy/issues/3
-            """
+            # see below for extended python hilarity...
 
             rsync_cmd.extend([
                 "-e",
@@ -582,18 +570,48 @@ class base:
             dest,
         ])
 
-        logging.info(" ".join(rsync_cmd))
-                
+        """
+        OMGWTF: when running as the user who owns /path/to/identityfile why does the
+        following fail with this error... especially when calling subprocess.Popen
+        when 'ssh -i /path/to/identityfile' works fine...???
+        (20170620/thisisaaronland)
+        
+        ERROR:root:popen command failed: rsync: Failed to exec ssh -o IdentityFile=/path/to/identityfile: No such file or directory (2)
+        rsync error: error in IPC code (code 14) at pipe.c(85) [sender=3.1.0]
+        rsync: connection unexpectedly closed (0 bytes received so far) [sender]
+        rsync error: error in IPC code (code 14) at io.c(226) [sender=3.1.0]
+        
+        basically because shell escaping... if there's a way to get subprocess to
+        pass 'ssh -e "foo bar baz"' along properly without requiring `shell=True`
+        I would love to know about it but apparently... it's not possible?
+        
+        see also: https://github.com/whosonfirst/flamework-deploy/issues/3
+        """
+
+        enable_shell = False
+
+        if self.identity != None:
+            rsync_cmd = " ".join(rsync_cmd)
+            enable_shell = True
+
+            logging.info(rsync_cmd)
+        else:
+            logging.info(" ".join(rsync_cmd))
+
         if self.dryrun:
             return True
 
-        return self._popen(rsync_cmd)
+        return self._popen(rsync_cmd, shell=enable_shell)
 
-    def _popen(self, cmd):
+    def _popen(self, cmd, **kwargs):
 
-        logging.debug("popen with %s" % " ".join(cmd))
+        if kwargs.get("shell", False):
+            logging.debug("popen with %s" % cmd)
+            prog = subprocess.Popen(cmd, stderr=subprocess.PIPE, shell=True)
+        else:
+            logging.debug("popen with %s" % " ".join(cmd))
+            prog = subprocess.Popen(cmd, stderr=subprocess.PIPE, shell=False)
 
-        prog = subprocess.Popen(cmd, stderr=subprocess.PIPE, shell=False)
         rsp = prog.communicate()
 
         # logging.debug("popen response: %s" % rsp)
