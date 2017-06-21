@@ -50,7 +50,7 @@ if __name__ == '__main__':
        cfg = ConfigParser.ConfigParser()
        cfg.read(options.config)
 
-       d = flamework.deploy.base(options.appname, cfg, dryrun=options.dryrun)
+       d = flamework.deploy.base(options.appname, cfg, dryrun=options.dryrun, verbose=options.verbose)
    
        # logging.info("myles is ready to dive")
 

@@ -82,11 +82,19 @@ class base:
             if not os.path.isdir(path):
                 raise Exception, "%s is not a directory" % path
 
-        for path in (self.hostsfile, self.identity):
+        for path in (self.hostsfile,):
 
             if not os.path.exists(path):
                 raise Exception, "%s does not exist" % path
         
+        if self.identity == "":
+            self.identity = None
+
+        else:
+
+            if not os.path.exists(self.identity):
+                raise Exception, "%s does not exist" % self.identity
+            
         for cfg in ('config_local.php', 'secrets.php'):
 
             cfg_path = os.path.join(self.config, cfg)
@@ -98,6 +106,8 @@ class base:
 
             if target == "":
                 raise Exception, "%s is empty" % "FIXME"
+
+        self.verbose = kwargs.get("verbose", False)
 
     def hosts(self):
 
@@ -462,9 +472,16 @@ class base:
             "ssh",
             "-q",
             "-t",	# https://stackoverflow.com/questions/12480284/ssh-error-when-executing-a-remote-command-stdin-is-not-a-tty
-            # "-i", self.identity,
-            addr.hostname()
         ]
+
+        if self.identity != None:
+            ssh_cmd.extend([
+                "-i", self.identity
+            ])
+
+        ssh_cmd.extend([
+            addr.hostname()
+        ])
 
         ssh_cmd.extend(cmd)
 
@@ -481,11 +498,18 @@ class base:
 
         scp_cmd = [
             "scp",
-            "-q",
-            # "-i", self.identity,
-            src,
-            dest,
+            "-q"
         ]
+
+        if self.identity != None:
+            ssh_cmd.extend([
+                "-i", self.identity
+            ])
+
+        ssh_cmd.extend([
+            src,
+            dest
+        ])
 
         logging.info(" ".join(scp_cmd))
                 
@@ -500,12 +524,30 @@ class base:
         dest = "%s:%s" % (addr.hostname(), dest)
 
         rsync_cmd = [
-            self.rsync,
-            "-e",
-            # "\"ssh -o IdentityFile=%s\"" % self.identity,
-            "ssh",
+            self.rsync
+        ]
+
+        if self.identity != None:
+
+            rsync_cmd.extend([
+                "-e",
+                "\"ssh -o IdentityFile=%s\"" % self.identity,
+            ])
+
+        else:
+
+            rsync_cmd.extend([
+                "-e",
+                "ssh"
+            ])
+
+        if self.verbose:
+            rsync_cmd.extend([
+                "-v", "-v"
+            ])
+
+        rsync_cmd.extend([
             "-a", "-z",
-            # "-v",
             "--delete",
             "--safe-links",
             "--cvs-exclude",
@@ -513,7 +555,7 @@ class base:
             "--exclude=config_staging.php",
             src,
             dest,
-        ]
+        ])
 
         logging.info(" ".join(rsync_cmd))
                 
