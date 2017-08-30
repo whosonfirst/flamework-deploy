@@ -82,11 +82,19 @@ class base:
             if not os.path.isdir(path):
                 raise Exception, "%s is not a directory" % path
 
-        for path in (self.hostsfile, self.identity):
+        for path in (self.hostsfile,):
 
             if not os.path.exists(path):
                 raise Exception, "%s does not exist" % path
         
+        if self.identity == "":
+            self.identity = None
+
+        else:
+
+            if not os.path.exists(self.identity):
+                raise Exception, "%s does not exist" % self.identity
+            
         for cfg in ('config_local.php', 'secrets.php'):
 
             cfg_path = os.path.join(self.config, cfg)
@@ -98,6 +106,8 @@ class base:
 
             if target == "":
                 raise Exception, "%s is empty" % "FIXME"
+
+        self.verbose = kwargs.get("verbose", False)
 
     def hosts(self):
 
@@ -472,9 +482,16 @@ class base:
             "ssh",
             "-q",
             "-t",	# https://stackoverflow.com/questions/12480284/ssh-error-when-executing-a-remote-command-stdin-is-not-a-tty
-            # "-i", self.identity,
-            addr.hostname()
         ]
+
+        if self.identity != None:
+            ssh_cmd.extend([
+                "-i", self.identity
+            ])
+
+        ssh_cmd.extend([
+            addr.hostname()
+        ])
 
         ssh_cmd.extend(cmd)
 
@@ -491,11 +508,18 @@ class base:
 
         scp_cmd = [
             "scp",
-            "-q",
-            # "-i", self.identity,
-            src,
-            dest,
+            "-q"
         ]
+
+        if self.identity != None:
+            ssh_cmd.extend([
+                "-i", self.identity
+            ])
+
+        ssh_cmd.extend([
+            src,
+            dest
+        ])
 
         logging.info(" ".join(scp_cmd))
                 
@@ -510,10 +534,31 @@ class base:
         dest = "%s:%s" % (addr.hostname(), dest)
 
         rsync_cmd = [
-            self.rsync,
-            "-e",
-            # "\"ssh -o IdentityFile=%s\"" % self.identity,
-            "ssh",
+            self.rsync
+        ]
+
+        if self.identity != None:
+
+            # see below for extended python hilarity...
+
+            rsync_cmd.extend([
+                "-e",
+                "\"ssh -o IdentityFile=%s\"" % self.identity,
+            ])
+
+        else:
+
+            rsync_cmd.extend([
+                "-e",
+                "ssh"
+            ])
+
+        if self.verbose:
+            rsync_cmd.extend([
+                "-v", "-v"
+            ])
+
+        rsync_cmd.extend([
             "-a", "-z",
             # "-v",
             "-O",	# https://stackoverflow.com/questions/667992/rsync-error-failed-to-set-times-on-foo-bar-operation-not-permitted
@@ -522,22 +567,53 @@ class base:
             "--cvs-exclude",
             "--exclude=templates_c",
             "--exclude=config_staging.php",
+            "--exclude=config_dev.php",
             src,
             dest,
-        ]
+        ])
 
-        logging.info(" ".join(rsync_cmd))
-                
+        """
+        OMGWTF: when running as the user who owns /path/to/identityfile why does the
+        following fail with this error... especially when calling subprocess.Popen
+        when 'ssh -i /path/to/identityfile' works fine...???
+        (20170620/thisisaaronland)
+        
+        ERROR:root:popen command failed: rsync: Failed to exec ssh -o IdentityFile=/path/to/identityfile: No such file or directory (2)
+        rsync error: error in IPC code (code 14) at pipe.c(85) [sender=3.1.0]
+        rsync: connection unexpectedly closed (0 bytes received so far) [sender]
+        rsync error: error in IPC code (code 14) at io.c(226) [sender=3.1.0]
+        
+        basically because shell escaping... if there's a way to get subprocess to
+        pass 'ssh -e "foo bar baz"' along properly without requiring `shell=True`
+        I would love to know about it but apparently... it's not possible?
+        
+        see also: https://github.com/whosonfirst/flamework-deploy/issues/3
+        """
+
+        enable_shell = False
+
+        if self.identity != None:
+            rsync_cmd = " ".join(rsync_cmd)
+            enable_shell = True
+
+            logging.info(rsync_cmd)
+        else:
+            logging.info(" ".join(rsync_cmd))
+
         if self.dryrun:
             return True
 
-        return self._popen(rsync_cmd)
+        return self._popen(rsync_cmd, shell=enable_shell)
 
-    def _popen(self, cmd):
+    def _popen(self, cmd, **kwargs):
 
-        logging.debug("popen with %s" % " ".join(cmd))
+        if kwargs.get("shell", False):
+            logging.debug("popen with %s" % cmd)
+            prog = subprocess.Popen(cmd, stderr=subprocess.PIPE, shell=True)
+        else:
+            logging.debug("popen with %s" % " ".join(cmd))
+            prog = subprocess.Popen(cmd, stderr=subprocess.PIPE, shell=False)
 
-        prog = subprocess.Popen(cmd, stderr=subprocess.PIPE, shell=False)
         rsp = prog.communicate()
 
         # logging.debug("popen response: %s" % rsp)

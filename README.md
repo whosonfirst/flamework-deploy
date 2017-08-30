@@ -11,6 +11,8 @@ Too soon. Everything here will change.
 * Path to a list of hosts
 * Path to a config folder containing config_local, secrets and optionally config_staging
 
+For an example, see the [example folder](example).
+
 ## myles
 
 ### stage-site
