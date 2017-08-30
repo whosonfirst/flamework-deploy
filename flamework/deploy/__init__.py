@@ -516,6 +516,7 @@ class base:
             "ssh",
             "-a", "-z",
             # "-v",
+            "-O",	# https://stackoverflow.com/questions/667992/rsync-error-failed-to-set-times-on-foo-bar-operation-not-permitted
             "--delete",
             "--safe-links",
             "--cvs-exclude",
