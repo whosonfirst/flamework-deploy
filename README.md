@@ -18,78 +18,92 @@ example-deploy-site:
         @make myles-deploy-site STAGING_TARGET=$(STAGING_TARGET) DEPLOY_TARGET=$(DEPLOY_TARGET) DEPLOY_HOSTS=$(DEPLOY_HOSTS)
 ```
 
+### Targets
+
 `myles` defines the following targets:
 
-### myles-block-deploy
+#### myles-block-deploy
 
 * STAGING_TARGET= _please write me_
 
-### myles-unblock-deploy
+#### myles-unblock-deploy
 
 * STAGING_TARGET= _please write me_
 
-### myles-ensure-unblocked
+#### myles-ensure-unblocked
 
 * STAGING_TARGET= _please write me_
 
-### myles-stage-site
+#### myles-stage-site
 
 * STAGING_SOURCE= _please write me_
 * STAGING_TARGET= _please write me_
 
-### myles-deploy-site
+#### myles-deploy-site
 
 * STAGING_TARGET= _please write me_
 * DEPLOY_TARGET= _please write me_
 * DEPLOY_HOSTS= _please write me_
 
-### myles-deploy-site-for-host
+#### myles-deploy-site-for-host
 
 * STAGING_TARGET= _please write me_
 * DEPLOY_TARGET= _please write me_
 * DEPLOY_HOST= _please write me_
 
-### myles-deploy-config
+#### myles-deploy-config
 
 * STAGING_TARGET= _please write me_
 * DEPLOY_TARGET= _please write me_
 * DEPLOY_HOSTS= _please write me_
 
-### myles-deploy-config-for-host
+#### myles-deploy-config-for-host
 
 * STAGING_TARGET= _please write me_
 * DEPLOY_TARGET= _please write me_
 * DEPLOY_HOST= _please write me_
 
-### myles-disable-site
+#### myles-disable-site
 
 * DEPLOY_HOSTS= _please write me_
 * DEPLOY_TARGET= _please write me_
 
-### myles-enable-site
+#### myles-enable-site
 
 * DEPLOY_HOSTS= _please write me_
 * DEPLOY_TARGET= _please write me_
 
-### myles-disable-host
+#### myles-disable-host
 
 * DEPLOY_HOST= _please write me_
 * DEPLOY_TARGET= _please write me_
 
-### myles-enable-host
+#### myles-enable-host
 
 * DEPLOY_HOST= _please write me_
 * DEPLOY_TARGET= _please write me_
 
-### myles-ensure-enabled
+#### myles-ensure-enabled
 
 * DEPLOY_HOST= _please write me_
 
-### myles-ensure-disabled
+#### myles-ensure-disabled
 
 * DEPLOY_HOST= _please write me_
 
+### Hosts
 
+`myles` read hosts for deploy code to from plain-text files that look like this:
 
+```
+127.0.0.1		# example-1
+127.0.0.2:8080		# example-2
+# 127.0.0.2:8081	# example-3
+```
 
+Entries starting with a `#` are ignored.
+
+### Config files
+
+_please write me_
 
