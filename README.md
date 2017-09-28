@@ -1,40 +1,95 @@
 # flamework-deploy
 
-Too soon. Everything here will change.
+Tools for deploying Flamework applications.
 
-## Things this tool needs
+## Important
 
-* Path to a Flamework-derived project, remote
-* Path to a Flamework-derived project Git source
-* Path to a staging folder
-* Path to an identify file (for scp and rsync)
-* Path to a list of hosts
-* Path to a config folder containing config_local, secrets and optionally config_staging
+If you are looking for the version of `flamework-deploy` that used a variety of Python libraries and tools for deploying applications, it can be found over here: https://github.com/whosonfirst/flamework-deploy/releases/tag/1.0.0
 
-For an example, see the [example folder](example).
+## Myles
 
-## myles
-
-### stage-site
+`myles` is the prefix for a series of `make` targets (defined in [myles/Makefile](myles/Makefile)) for deploying Flamework applications. You can invoke them as-is or wrap them in your custom targets, specific to your application. For example:
 
 ```
-./myles -a api -c ../../api/api.cfg -v -n stage-site
-INFO:root:purge contents of /usr/local/mapzen/api/staging
-INFO:root:clone https://github.com/whosonfirst/whosonfirst-www-api.git in to /usr/local/mapzen/api/staging
-INFO:root:remove /usr/local/mapzen/api/staging/.git
-INFO:root:copy /usr/local/mapzen/api/config/config_local.php to /usr/local/mapzen/api/staging/www/include/config_local.php
-INFO:root:copy /usr/local/mapzen/api/config/config_staging.php to /usr/local/mapzen/api/staging/www/include/config_staging.php
-INFO:root:copy /usr/local/mapzen/api/config/secrets.php to /usr/local/mapzen/api/staging/www/include/secrets.php
-INFO:root:ensure errors are disabled in /usr/local/mapzen/api/staging/www/.htaccess
-INFO:root:set $GLOBALS['cfg']['environment'] in /usr/local/mapzen/api/staging/www/include/config_local/.php
+example-deploy-site:
+        if test "$(DEPLOY_HOSTS_ROOT)" = ""; then echo "you forgot to specify DEPLOY_HOSTS_ROOT"; exit 1; fi
+        $(eval DEPLOY_HOSTS := "${DEPLOY_HOSTS_ROOT}/hosts_${ENV}.txt")
+        if test ! -f $(DEPLOY_HOSTS); then echo "hosts file ($(DEPLOY_HOSTS)) does not exist"; exit 1; fi
+        @make myles-deploy-site STAGING_TARGET=$(STAGING_TARGET) DEPLOY_TARGET=$(DEPLOY_TARGET) DEPLOY_HOSTS=$(DEPLOY_HOSTS)
 ```
 
-### deploy-config
+`myles` defines the following targets:
 
-### deploy-site
+### myles-block-deploy
 
-### enable-host
+* STAGING_TARGET= _please write me_
 
-### disable-host
+### myles-unblock-deploy
 
-### status
+* STAGING_TARGET= _please write me_
+
+### myles-ensure-unblocked
+
+* STAGING_TARGET= _please write me_
+
+### myles-stage-site
+
+* STAGING_SOURCE= _please write me_
+* STAGING_TARGET= _please write me_
+
+### myles-deploy-site
+
+* STAGING_TARGET= _please write me_
+* DEPLOY_TARGET= _please write me_
+* DEPLOY_HOSTS= _please write me_
+
+### myles-deploy-site-for-host
+
+* STAGING_TARGET= _please write me_
+* DEPLOY_TARGET= _please write me_
+* DEPLOY_HOST= _please write me_
+
+### myles-deploy-config
+
+* STAGING_TARGET= _please write me_
+* DEPLOY_TARGET= _please write me_
+* DEPLOY_HOSTS= _please write me_
+
+### myles-deploy-config-for-host
+
+* STAGING_TARGET= _please write me_
+* DEPLOY_TARGET= _please write me_
+* DEPLOY_HOST= _please write me_
+
+### myles-disable-site
+
+* DEPLOY_HOSTS= _please write me_
+* DEPLOY_TARGET= _please write me_
+
+### myles-enable-site
+
+* DEPLOY_HOSTS= _please write me_
+* DEPLOY_TARGET= _please write me_
+
+### myles-disable-host
+
+* DEPLOY_HOST= _please write me_
+* DEPLOY_TARGET= _please write me_
+
+### myles-enable-host
+
+* DEPLOY_HOST= _please write me_
+* DEPLOY_TARGET= _please write me_
+
+### myles-ensure-enabled
+
+* DEPLOY_HOST= _please write me_
+
+### myles-ensure-disabled
+
+* DEPLOY_HOST= _please write me_
+
+
+
+
+
