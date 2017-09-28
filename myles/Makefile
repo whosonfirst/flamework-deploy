@@ -1,3 +1,15 @@
+# Override these with 'make [target] ENV=dev BRANCH=dev'
+ENV = prod
+BRANCH = master
+
+WHOAMI = $(shell hostname -s)
+WHEREAMI = $(shell pwd)
+
+CURL = $(shell which curl)
+GIT = $(shell which git)
+RSYNC = $(shell which rsync)
+SSH = $(shell which ssh)
+
 ## myles targets
 
 # PLEASE FOR TO BE CHECKING FOR AND ADDING/SETTING IDENTITY FILE STUFF
